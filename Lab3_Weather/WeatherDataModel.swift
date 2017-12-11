@@ -13,13 +13,27 @@ class WeatherDataModel {
     var cityName : String = ""
     var currentTemp : Int = 0
     var currentWeather : String = ""
+    
     var condition : Int = 0
     var weatherIconName : String = ""
-    var threeHourForecastWeather : [String] = []
-    var threeHourForecastTemp : [String] = []
-    var fourDaysForecastWeather : [String] = []
-    var fourDaysForecastTemp : [String] = []
-    var date = "Date";
+    
+    var localtime: String = ""
+    var temperature : Int = 0
+    
+    //cur weather
+    var dayAndTime: String = ""
+    var weatherStatus: String = ""
+    var currentTempHigh : Double = 0
+    var currentTempLow : Double = 0
+    
+    //oneday forcast
+    var oneDayTemp = Array(repeating: 0.0, count: 8)
+    var oneDayWeather = Array(repeating: "", count: 8)
+    
+    //fourday forcast
+    var fourDayTempHigh = Array(repeating: 0.0, count: 4)
+    var fourDayTempLow = Array(repeating: 0.0, count: 4)
+    var fourDayWeather = Array(repeating: "", count: 4)
     
     
     func updateWeatherIcon(condition: Int) -> String {

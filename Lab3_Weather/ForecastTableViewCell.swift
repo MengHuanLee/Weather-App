@@ -1,21 +1,19 @@
 //
-//  CityListTableViewCell.swift
+//  ForecastTableViewCell.swift
 //  Lab3_Weather
 //
-//  Created by Jerry Lee on 12/7/17.
+//  Created by Jerry Lee on 12/9/17.
 //  Copyright © 2017 Jerry Lee. All rights reserved.
 //
 
 import UIKit
 
-class CityListTableViewCell: UITableViewCell {
+class ForecastTableViewCell: UITableViewCell {
 
-    
-    @IBOutlet weak var cityNameLabel: UILabel!
-    @IBOutlet weak var cityWeaterLabel: UILabel!
-    @IBOutlet weak var cityTempLabel: UILabel!
-    
-    
+    @IBOutlet weak var dateLabel: UILabel!
+    @IBOutlet weak var weatherLabel: UILabel!
+    @IBOutlet weak var tempHighLabel: UILabel!
+    @IBOutlet weak var tempLowLabel: UILabel!
     override func awakeFromNib() {
         super.awakeFromNib()
         // Initialization code
@@ -26,5 +24,5 @@ class CityListTableViewCell: UITableViewCell {
 
         // Configure the view for the selected state
     }
-    
+
 }

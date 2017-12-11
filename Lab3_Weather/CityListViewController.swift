@@ -12,15 +12,21 @@ import SwiftyJSON
 import CoreLocation
 import GooglePlacesSearchController
 
+var CityDataDictionary = [String : WeatherDataModel]()
+var CityIndexDictionary = [Int : String]()
+var Celcius = true
+
 class CityListViewController: UIViewController, CLLocationManagerDelegate, UITableViewDelegate, UITableViewDataSource {
 
     //Constants
     let WEATHER_URL = "http://api.openweathermap.org/data/2.5/weather"
     let APPID = "824c7270cebd93216f6a414bc2bcfd9a"
     let GoogleMapsAPIServerKey = "AIzaSyBtE9NgcQCVYBxLcK0O_vZkYBwF4Kk0TnE"
+    let LOCALTIME_URL = "http://api.timezonedb.com/v2/get-time-zone"
+    let TIME_APP_ID = "FTOJTD92U9EW"
     
     let locationManager = CLLocationManager()
-    //let weatherDataModel = WeatherDataModel()
+    
     
     //variable
     var googleSearchController: GooglePlacesSearchController!
@@ -29,12 +35,17 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     var cityWeatherDataList = [WeatherDataModel]()
     
     @IBOutlet weak var cityListTableView: UITableView!
-    @IBOutlet weak var cityNameTextField: UITextField!
-    @IBOutlet weak var cityNameLabel: UILabel!
-    @IBOutlet weak var cityTempLabel: UILabel!
+
 
     @IBAction func getDataButtonClicked(_ sender: Any) {
-        
+        performSegue(withIdentifier: "goToSlideView", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "goToSlideView" {
+            let destinationVC = segue.destination as! CitySlideViewController
+            destinationVC.cityWeatherDataList = self.cityWeatherDataList
+        }
     }
     
     //MARK: Google place search auto complete: the search button connect to here and perform action
@@ -56,7 +67,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
             self.getWeatherData(url: self.WEATHER_URL, parameters: params)
             self.cityListTableView.reloadData()
         }
-        
         
         present(controller, animated: true, completion: nil)
     }
@@ -82,7 +92,8 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    //MARK: Networking - Get data with HTTP
+    
+    //MARK: Networking - Get data with HTTP from OpenWeatherMap API
     /*************************************************/
     func getWeatherData(url: String, parameters : [String : String]) {
         Alamofire.request(url, method: .get, parameters: parameters).responseJSON {
@@ -94,7 +105,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 
             } else {
                 print("Error \(String(describing: response.result.error))")
-                self.cityNameLabel.text = "Connection Problem"
+                //self.cityNameLabel.text = "Connection Problem"
             }
         }
     }
@@ -112,15 +123,78 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
             cityList.append(weatherDataModel.cityName)
             cityWeatherDataList.append(weatherDataModel)
             
-            cityNameLabel.text = weatherDataModel.cityName
-            cityTempLabel.text = "\(weatherDataModel.currentTemp)°"
+            //cityNameLabel.text = weatherDataModel.cityName
+            //cityTempLabel.text = "\(weatherDataModel.currentTemp)°"
             cityListTableView.reloadData()
             //weatherIcon.image = UIImage(named : weatherDataModel.weatherIconName)
             
         } else {
-            cityNameLabel.text = "Weather Unavailable"
+            //cityNameLabel.text = "Weather Unavailable"
         }
     }
+    
+    // MARK: get local time from Timezonedb API
+    func getLocalTime(url : String, parameters : [String : String], cityname: String) {
+        
+        Alamofire.request(url, method: .get, parameters: parameters).responseJSON {
+            response in
+            if response.result.isSuccess {
+                print("Successful")
+                let localtimeData : JSON = JSON(response.result.value!)
+                self.updatetimeData(json: localtimeData, cityname: cityname)
+                
+                
+            } else {
+                print("Error \(String(describing: response.result.error))")
+                //self.cityLabel.text = "Connection Issues"
+            }
+        }
+    }
+    func updatetimeData(json : JSON, cityname: String) {
+        //let formatedtimemodel = FormatedTimeModel()
+        let formatedtime = json["formatted"].stringValue
+        print(" formatedtime: \(formatedtime)")
+        // "formatted":"2016-02-02 21:03:11"
+        let formatedlocaltime = localtimeconvertDateFormater(formatedtime)
+        let formateddayanddate = dayandDateconvertDateFormater(formatedtime)
+        
+        let cityExists = CityDataDictionary[cityname] != nil
+        if(!cityExists){
+            let datamodel = WeatherDataModel()
+            CityDataDictionary[cityname] = datamodel
+        }
+        
+        CityDataDictionary[cityname]!.localtime = formatedlocaltime
+        CityDataDictionary[cityname]!.dayAndTime = formateddayanddate
+        cityListTableView.reloadData()
+        //CityTimeModelList.append(formatedtimemodel)
+        
+        
+    }
+    func localtimeconvertDateFormater(_ date: String) -> String
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let date = dateFormatter.date(from: date)
+        dateFormatter.dateFormat = "HH:mm"
+        return dateFormatter.string(from: date!)
+        
+    }
+    
+    func dayandDateconvertDateFormater(_ date: String) -> String
+    {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let date = dateFormatter.date(from: date)
+        // desired format: Thursday   Oct   18
+        //EEEE for weekday
+        //MMMM for month name
+        dateFormatter.dateFormat = "EEEE MMMM dd"
+        return dateFormatter.string(from: date!)
+        
+    }
+    
+    
     
     //MARK: UI update
     func setLabels(weatherData: NSData) {
@@ -146,7 +220,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     //didFailWithError method
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print(error)
-        cityNameLabel.text = "Location Unavailable"
+        //cityNameLabel.text = "Location Unavailable"
         
     }
     
@@ -164,14 +238,21 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cityListTableViewCell", for: indexPath) as! CityListTableViewCell
         
-
+        
         cell.cityNameLabel.text = cityWeatherDataList[indexPath.row].cityName
         cell.cityTempLabel.text = String(cityWeatherDataList[indexPath.row].currentTemp)
         cell.cityWeaterLabel.text = String(cityWeatherDataList[indexPath.row].condition)
         return cell
-        
-        
+    
     }
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        tableView.backgroundColor = .clear
+        cell.backgroundColor = UIColor.clear
+        tableView.tableFooterView = UIView()
+    }
+    
+    
+    
     
 
 }

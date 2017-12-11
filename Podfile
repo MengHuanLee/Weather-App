@@ -8,7 +8,8 @@ target 'Lab3_Weather' do
   # Pods for Lab3_Weather
   pod 'SwiftyJSON'
   pod 'Alamofire', '~> 4.5'
-  pod "GooglePlacesSearchController"
+  pod 'GooglePlacesSearchController'
+  pod 'FSPagerView'
   target 'Lab3_WeatherTests' do
     inherit! :search_paths
     # Pods for testing
