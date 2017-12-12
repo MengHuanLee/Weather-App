@@ -11,20 +11,14 @@ import Foundation
 class WeatherDataModel {
     
     var cityName : String = ""
-    var currentTemp : Int = 0
+    //cur weather
+    var currentTemp : Double = 0
     var currentWeather : String = ""
-    
     var condition : Int = 0
     var weatherIconName : String = ""
     
     var localtime: String = ""
-    var temperature : Int = 0
-    
-    //cur weather
     var dayAndTime: String = ""
-    var weatherStatus: String = ""
-    var currentTempHigh : Double = 0
-    var currentTempLow : Double = 0
     
     //oneday forcast
     var oneDayTemp = Array(repeating: 0.0, count: 8)
@@ -36,7 +30,7 @@ class WeatherDataModel {
     var fourDayWeather = Array(repeating: "", count: 4)
     
     
-    func updateWeatherIcon(condition: Int) -> String {
+    func updateWeatherIcon() -> String {
         
         switch (condition) {
             

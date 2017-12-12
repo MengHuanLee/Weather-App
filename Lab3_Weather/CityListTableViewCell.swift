@@ -14,6 +14,8 @@ class CityListTableViewCell: UITableViewCell {
     @IBOutlet weak var cityNameLabel: UILabel!
     @IBOutlet weak var cityWeaterLabel: UILabel!
     @IBOutlet weak var cityTempLabel: UILabel!
+    @IBOutlet weak var weatherIcon: UIImageView!
+    @IBOutlet weak var timeLabel: UILabel!
     
     
     override func awakeFromNib() {

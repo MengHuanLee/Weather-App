@@ -14,6 +14,13 @@
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
+			<key>timezonedb.com</key>
+			<dict>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 			<key>openweathermap.org</key>
 			<dict>
 				<key>NSIncludesSubdomains</key>
