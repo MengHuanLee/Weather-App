@@ -188,20 +188,23 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 // update oneday forcast
                 for index in 0...7 {
                     dataModel.oneDayTemp[index] = json["list"][index]["main"]["temp"].double!
-                    dataModel.oneDayWeather[index] = json["list"][index]["weather"][index]["main"].stringValue
+                    dataModel.oneDayWeather[index] = json["list"][index]["weather"][0]["main"].stringValue
                 }
                 // update four day forcast
                 var tempArray = Array(repeating: 0.0, count: 8)
                 for index in 8...15 {
                     tempArray[index - 8] = json["list"][index]["main"]["temp"].double!
+                    dataModel.fourDayWeather[0] = json["list"][index]["weather"][0]["main"].stringValue
                 }
                 var maxTemp = tempArray.max()
                 var minTemp = tempArray.min()
                 dataModel.fourDayTempHigh[0] = maxTemp!
                 dataModel.fourDayTempLow[0] = minTemp!
                 
+                
                 for index in 16...23 {
                     tempArray[index - 16] = json["list"][index]["main"]["temp"].double!
+                    dataModel.fourDayWeather[1] = json["list"][index]["weather"][0]["main"].stringValue
                 }
                 maxTemp = tempArray.max()
                 minTemp = tempArray.min()
@@ -210,6 +213,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 
                 for index in 24...31 {
                     tempArray[index - 24] = json["list"][index]["main"]["temp"].double!
+                    dataModel.fourDayWeather[2] = json["list"][index]["weather"][0]["main"].stringValue
                 }
                 maxTemp = tempArray.max()
                 minTemp = tempArray.min()
@@ -219,6 +223,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 tempArray = Array(repeating: 0.0, count: 4)
                 for index in 32...35 {
                     tempArray[index - 32] = json["list"][index]["main"]["temp"].double!
+                    dataModel.fourDayWeather[3] = json["list"][index]["weather"][0]["main"].stringValue
                 }
                 maxTemp = tempArray.max()
                 minTemp = tempArray.min()
@@ -365,8 +370,15 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         tableView.tableFooterView = UIView()
     }
     
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
     
-    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if (editingStyle == UITableViewCellEditingStyle.delete) {
+            // handle delete (by removing the data from your array and updating the tableview)
+        }
+    }
     
 
 }
