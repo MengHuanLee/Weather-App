@@ -12,7 +12,8 @@ import UIKit
 class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableViewDelegate, UITableViewDataSource {
 
     //var cityWeatherDataList : [WeatherDataModel]?
-    lazy var listCount = cityDataDictionary.count
+    var slideviewIndex: Int = 0
+    lazy var listCount = cityDataDict.count
     lazy var tableViewList = [UITableView]()
     lazy var cellList = [UITableViewCell]()
     var weatherList = [Int: [String]]()
@@ -22,11 +23,13 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
     @IBOutlet weak var pageControl: UIPageControl!
     
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
-//        print(scrollView.contentOffset)
+        //print(scrollView.contentOffset)
         pageControl.currentPage = Int(scrollView.contentOffset.x / CGFloat(375))
     }
     override func viewDidLoad() {
         super.viewDidLoad()
+        //receive notification from settings
+        NotificationCenter.default.addObserver(self, selector: #selector(loadList), name: NSNotification.Name(rawValue: "load"), object: nil)
 
         // Do any additional setup after loading the view.
 
@@ -48,6 +51,13 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
         initCustomTableView()
     }
     
+    @objc func loadList(){
+        //load data here
+        for i in tableViewList{
+            i.reloadData()
+        }
+    }
+    
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -55,7 +65,7 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 9  //返回TableView的Cell数量，可以动态设置；
+        return 2 + 9 + 5  //返回TableView的Cell数量，可以动态设置；
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -79,12 +89,44 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
         
         for i in 0...listCount-1{
             var weatherArray = [String]()
-            weatherArray.append("\(cityDataDictionary[cityIndexDictionary[i]!]!.cityName)  \(cityDataDictionary[cityIndexDictionary[i]!]!.localtime)")
-            for j in [0,2,4,6]{
-                weatherArray.append("Day1: \(cityDataDictionary[cityIndexDictionary[i]!]!.oneDayWeather[j]) \(cityDataDictionary[cityIndexDictionary[i]!]!.oneDayTemp[j]) \(cityDataDictionary[cityIndexDictionary[i]!]!.oneDayWeather[j+1]) \(cityDataDictionary[cityIndexDictionary[i]!]!.oneDayTemp[j+1])")
+            let index = cityIndexDictionary[i]!
+            
+            weatherArray.append("\(cityDataDict[index]!.cityName)  \(cityDataDict[index]!.dayAndTime)")
+            weatherArray.append("One Day Forecast Every Three Hours")
+            var curTemp = Double()
+            var curWeather = String()
+            for j in [0,1,2,3,4,5,6,7]{
+                curWeather = cityDataDict[index]!.oneDayWeather[j]
+                curTemp = cityDataDict[index]!.oneDayTemp[j]
+                
+                if(Celcius){
+                    weatherArray.append("\((j+1)*3) hours:  \(curWeather)  \(curTemp)°C")
+                }else{
+                    curTemp = changeTempToF(curTemp)
+                    curTemp = Double(round(100*curTemp)/100)
+                    weatherArray.append("\((j+1)*3) hours:  \(curWeather)  \(curTemp)°F")
+                }
+                
             }
+            weatherArray.append("Future Four Days Forecast")
+            var fourdaysTempHigh = Double()
+            var fourdaysTempLow = Double()
+            var fourdaysWeather = String()
             for k in 0...3{
-                weatherArray.append("Day\(k+2):\(cityDataDictionary[cityIndexDictionary[i]!]!.fourDayWeather[k]) \(cityDataDictionary[cityIndexDictionary[i]!]!.fourDayTempLow[k]) \(cityDataDictionary[cityIndexDictionary[i]!]!.fourDayTempHigh[k])")
+                fourdaysWeather = cityDataDict[index]!.fourDayWeather[k]
+                fourdaysTempLow = cityDataDict[index]!.fourDayTempLow[k]
+                fourdaysTempHigh = cityDataDict[index]!.fourDayTempHigh[k]
+                if(Celcius){
+                    weatherArray.append("Day\(k+2): \(fourdaysWeather) Low: \(fourdaysTempLow)°C High: \(fourdaysTempHigh)°C")
+                }else{
+                    fourdaysTempLow = changeTempToF(fourdaysTempLow)
+                    fourdaysTempLow = Double(round(100*fourdaysTempLow)/100)
+                    fourdaysTempHigh = changeTempToF(fourdaysTempHigh)
+                    fourdaysTempHigh = Double(round(100*fourdaysTempHigh)/100)
+
+                    weatherArray.append("Day\(k+2): \(fourdaysWeather) Low: \(fourdaysTempLow)°F High: \(fourdaysTempHigh)°F")
+                }
+                
             }
             
             weatherList[i] = weatherArray
@@ -118,6 +160,9 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
         dynamicScrollView.contentSize = CGSize(contentW, 0);
         dynamicScrollView.isPagingEnabled = true;
         dynamicScrollView.delegate = self;
+        let startpixel = Int(slideviewIndex*375)
+        //var offsetPoint = CGPoint(CGFloat(startpixel), 0)
+        dynamicScrollView.contentOffset = CGPoint(CGFloat(startpixel),0);
         
     }
     
@@ -130,6 +175,10 @@ class CitySlideViewController: UIViewController, UIScrollViewDelegate, UITableVi
 
     }
     
+    func changeTempToF(_ tempInC: Double)-> Double {
+        let tempInF = tempInC * 1.8 + 32
+        return tempInF
+    }
     
 
     /*

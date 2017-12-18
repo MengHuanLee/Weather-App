@@ -12,7 +12,7 @@ import SwiftyJSON
 import CoreLocation
 import GooglePlacesSearchController
 
-var cityDataDictionary = [String : WeatherDataModel]()
+var cityDataDict = [String : WeatherDataModel]()
 var cityIndexDictionary = [Int : String]()
 var Celcius = true
 
@@ -37,17 +37,15 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     
     @IBOutlet weak var cityListTableView: UITableView!
 
-
-    @IBAction func getDataButtonClicked(_ sender: Any) {
-        performSegue(withIdentifier: "goToSlideView", sender: self)
-    }
-    /* MARK: func prepare
+    
+    //MARK: func prepare
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "goToSlideView" {
+        if segue.identifier == "CityCelltoSlideView" {
+            var selectedRow = self.cityListTableView.indexPathForSelectedRow
             let destinationVC = segue.destination as! CitySlideViewController
-            destinationVC.cityWeatherDataList = self.cityWeatherDataList
+            destinationVC.slideviewIndex = selectedRow!.row
         }
-    }*/
+    }
     
     //MARK: Google place search auto complete: the search button connect to here and perform action
     @IBAction func searchAddress(_ sender: UIBarButtonItem) {
@@ -74,6 +72,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(self, selector: #selector(loadList), name: NSNotification.Name(rawValue: "load"), object: nil)
         
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
@@ -81,9 +80,14 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         //ask permission for location and update location
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
-        
+
         // Do any additional setup after loading the view, typically from a nib.
         
+    }
+    
+    @objc func loadList(){
+        //load data here
+        cityListTableView.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -108,6 +112,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 cityName = weatherJSON["name"].stringValue
                 print(cityName)
                 self.updateWeatherDataFromJson(json: weatherJSON, cityName: cityName)
+                print("Leave group")
                 myGroup.leave()
             } else {
                 print("Error \(String(describing: response.result.error))")
@@ -117,7 +122,8 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         myGroup2.enter()
         myGroup.notify(queue: .main){
         //get 5 days forecast data
-
+        print("get into second")
+            
         Alamofire.request(self.WEATHER_FORECAST_URL, method: .get, parameters: parameters).responseJSON {
             response in
             if response.result.isSuccess {
@@ -125,6 +131,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 print(cityName)
                 let weatherJSON : JSON = JSON(response.result.value!)
                 self.updateForecastDataFromJson(json: weatherJSON, cityName: cityName)
+                print("leave two")
                 myGroup2.leave()
             } else {
                 print("Error \(String(describing: response.result.error))")
@@ -133,6 +140,8 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         }
         }
         myGroup2.notify(queue: .main){
+            print("enter get time")
+        //TODO: get time of the selected city
             
             Alamofire.request(self.LOCALTIME_URL, method: .get, parameters: timeParam).responseJSON {
             response in
@@ -144,6 +153,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 
             } else {
                 print("Error \(String(describing: response.result.error))")
+                //self.cityLabel.text = "Connection Issues"
             }
         }
         }
@@ -154,19 +164,19 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         if let temp = json["main"]["temp"].double {
             let dataModel : WeatherDataModel
             
-            if cityDataDictionary[cityName] == nil {
+            if cityDataDict[cityName] == nil {
                 dataModel = WeatherDataModel()
                 dataModel.cityName = cityName
                 cityIndexDictionary[cityIndexDictionary.count] = cityName
             } else {
-                dataModel = cityDataDictionary[cityName]!
+                dataModel = cityDataDict[cityName]!
             }
             
             dataModel.currentTemp = temp
             dataModel.currentWeather = json["weather"][0]["main"].stringValue
             dataModel.condition = json["weather"][0]["id"].intValue
             dataModel.weatherIconName = dataModel.updateWeatherIcon()
-            cityDataDictionary[cityName] = dataModel
+            cityDataDict[cityName] = dataModel
             print("Update current weather successful")
         } else {
             print ("update current weather problem")
@@ -177,7 +187,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         
         if json["cod"].intValue == 200 {
             
-            if let dataModel = cityDataDictionary[cityName] {
+            if let dataModel = cityDataDict[cityName] {
                 
                 // update oneday forcast
                 for index in 0...7 {
@@ -224,14 +234,27 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 dataModel.fourDayTempHigh[3] = maxTemp!
                 dataModel.fourDayTempLow[3] = minTemp!
                 //update weather data
-                cityDataDictionary[cityName] = dataModel
+                cityDataDict[cityName] = dataModel
                 print("update forecast successful")
             } else {
                 print("update forecast error")
             }
             
+            /*
+             let weatherDataModel = WeatherDataModel()
+             weatherDataModel.currentTemp = Int(temp - 273.15)
+             weatherDataModel.cityName = json["name"].stringValue
+             weatherDataModel.condition = json["weather"][0]["id"].intValue
+             weatherDataModel.weatherIconName = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.condition)
+             cityList.append(weatherDataModel.cityName)
+             cityWeatherDataList.append(weatherDataModel)
+             */
+            
             cityListTableView.reloadData()
             print("Update Forecast Data successful")
+            //cityNameLabel.text = weatherDataModel.cityName
+            //cityTempLabel.text = "\(weatherDataModel.currentTemp)°"
+            //weatherIcon.image = UIImage(named : weatherDataModel.weatherIconName)
             
         } else {
             print ("Update Forecast Weather Problem")
@@ -243,26 +266,29 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     func updateTimeDataFromJson(json : JSON, cityname: String) {
         //let formatedtimemodel = FormatedTimeModel()
         if let formatedtime = json["formatted"].string {
-            print(" formatedtime: \(formatedtime)")
-            // "formatted":"2016-02-02 21:03:11"
-            let formatedlocaltime = localtimeconvertDateFormater(formatedtime)
-            let formateddayanddate = dayandDateconvertDateFormater(formatedtime)
-            
-            let cityExists = cityDataDictionary[cityname] != nil
-            if(!cityExists){
-                let datamodel = WeatherDataModel()
-                cityDataDictionary[cityname] = datamodel
-            }
-            
-            cityDataDictionary[cityname]!.localtime = formatedlocaltime
-            cityDataDictionary[cityname]!.dayAndTime = formateddayanddate
+        print(" formatedtime: \(formatedtime)")
+        // "formatted":"2016-02-02 21:03:11"
+        let formatedlocaltime = localtimeconvertDateFormater(formatedtime)
+        let formateddayanddate = dayandDateconvertDateFormater(formatedtime)
+        
+        let cityExists = cityDataDict[cityname] != nil
+        if(!cityExists){
+            let datamodel = WeatherDataModel()
+            cityDataDict[cityname] = datamodel
+        }
+        
+        cityDataDict[cityname]!.localtime = formatedlocaltime
+        cityDataDict[cityname]!.dayAndTime = formateddayanddate
+        print("")
         } else {
             print("update time problem")
         }
         
         cityListTableView.reloadData()
+        //CityTimeModelList.append(formatedtimemodel)
+        
+        
     }
-    
     func localtimeconvertDateFormater(_ date: String) -> String
     {
         let dateFormatter = DateFormatter()
@@ -286,6 +312,15 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         
     }
     
+    
+    
+    //MARK: UI update
+    func setLabels(weatherData: NSData) {
+        
+    }
+    
+    
+    
     //MARK: Location manager
     //didUpdateLocations method
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -304,29 +339,38 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     //didFailWithError method
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print(error)
+        //cityNameLabel.text = "Location Unavailable"
         
     }
     
- 
+    
     //MARK: Change View
     
     //MARK: Table View Controller
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return cityDataDictionary.count
+        return cityDataDict.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cityListTableViewCell", for: indexPath) as! CityListTableViewCell
         
         let index = cityIndexDictionary[indexPath.row]
-        cell.cityNameLabel.text = cityDataDictionary[index!]!.cityName
-        print(cityDataDictionary[index!]!.cityName)
-        cell.cityTempLabel.text = "\(cityDataDictionary[index!]!.currentTemp)°"
-        cell.cityWeaterLabel.text = cityDataDictionary[index!]!.currentWeather
-        cell.weatherIcon.image = UIImage(named : cityDataDictionary[index!]!.weatherIconName)
-        cell.timeLabel.text = cityDataDictionary[index!]!.localtime
-        print(cityDataDictionary[index!]!.localtime)
+        cell.cityNameLabel.text = cityDataDict[index!]!.cityName
+        print(cityDataDict[index!]!.cityName)
+        if(Celcius){
+            cell.cityTempLabel.text = "\(cityDataDict[index!]!.currentTemp)°C"
+        }else{
+            var tempinf = changeTempToF(cityDataDict[index!]!.currentTemp)
+            tempinf = Double(round(100*tempinf)/100)
+            cell.cityTempLabel.text = "\(tempinf)°F"
+        }
+        
+        
+        cell.cityWeaterLabel.text = cityDataDict[index!]!.currentWeather
+        cell.weatherIcon.image = UIImage(named : cityDataDict[index!]!.weatherIconName)
+        cell.timeLabel.text = cityDataDict[index!]!.localtime
+        print(cityDataDict[index!]!.localtime)
         return cell
     
     }
@@ -343,14 +387,27 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if (editingStyle == UITableViewCellEditingStyle.delete) {
             // handle delete (by removing the data from your array and updating the tableview)
-            cityDataDictionary.removeValue(forKey: cityIndexDictionary[indexPath.row]!)
+            cityDataDict.removeValue(forKey: cityIndexDictionary[indexPath.row]!)
             let listNumber = cityIndexDictionary.count - 1
             for i in indexPath.row...listNumber {
                 cityIndexDictionary[i] = cityIndexDictionary[i+1]
             }
             cityIndexDictionary.removeValue(forKey: listNumber)
+            print("This is row \(cityIndexDictionary)")
             cityListTableView.deleteRows(at: [indexPath], with: .automatic)
         }
+    }
+    //should do something if someone selected the row
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let index = cityIndexDictionary[indexPath.row]
+        let toprint = cityDataDict[index!]!.cityName
+        print("This is row \(toprint)")
+    }
+    
+    
+    func changeTempToF(_ tempInC: Double)-> Double {
+        let tempInF = tempInC * 1.8 + 32
+        return tempInF
     }
     
 
