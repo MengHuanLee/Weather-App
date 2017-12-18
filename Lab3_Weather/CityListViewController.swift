@@ -377,6 +377,14 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if (editingStyle == UITableViewCellEditingStyle.delete) {
             // handle delete (by removing the data from your array and updating the tableview)
+            cityDataDictionary.removeValue(forKey: cityIndexDictionary[indexPath.row]!)
+            let listNumber = cityIndexDictionary.count - 1
+            for i in indexPath.row...listNumber {
+                cityIndexDictionary[i] = cityIndexDictionary[i+1]
+            }
+            cityIndexDictionary.removeValue(forKey: listNumber)
+            print("This is row \(cityIndexDictionary)")
+            cityListTableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
     
