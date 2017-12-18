@@ -108,7 +108,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 cityName = weatherJSON["name"].stringValue
                 print(cityName)
                 self.updateWeatherDataFromJson(json: weatherJSON, cityName: cityName)
-                print("Leave group")
                 myGroup.leave()
             } else {
                 print("Error \(String(describing: response.result.error))")
@@ -118,8 +117,7 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         myGroup2.enter()
         myGroup.notify(queue: .main){
         //get 5 days forecast data
-        print("get into second")
-            
+
         Alamofire.request(self.WEATHER_FORECAST_URL, method: .get, parameters: parameters).responseJSON {
             response in
             if response.result.isSuccess {
@@ -127,7 +125,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 print(cityName)
                 let weatherJSON : JSON = JSON(response.result.value!)
                 self.updateForecastDataFromJson(json: weatherJSON, cityName: cityName)
-                print("leave two")
                 myGroup2.leave()
             } else {
                 print("Error \(String(describing: response.result.error))")
@@ -136,8 +133,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         }
         }
         myGroup2.notify(queue: .main){
-            print("enter get time")
-        //TODO: get time of the selected city
             
             Alamofire.request(self.LOCALTIME_URL, method: .get, parameters: timeParam).responseJSON {
             response in
@@ -149,7 +144,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 
             } else {
                 print("Error \(String(describing: response.result.error))")
-                //self.cityLabel.text = "Connection Issues"
             }
         }
         }
@@ -236,21 +230,8 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 print("update forecast error")
             }
             
-            /*
-             let weatherDataModel = WeatherDataModel()
-             weatherDataModel.currentTemp = Int(temp - 273.15)
-             weatherDataModel.cityName = json["name"].stringValue
-             weatherDataModel.condition = json["weather"][0]["id"].intValue
-             weatherDataModel.weatherIconName = weatherDataModel.updateWeatherIcon(condition: weatherDataModel.condition)
-             cityList.append(weatherDataModel.cityName)
-             cityWeatherDataList.append(weatherDataModel)
-             */
-            
             cityListTableView.reloadData()
             print("Update Forecast Data successful")
-            //cityNameLabel.text = weatherDataModel.cityName
-            //cityTempLabel.text = "\(weatherDataModel.currentTemp)°"
-            //weatherIcon.image = UIImage(named : weatherDataModel.weatherIconName)
             
         } else {
             print ("Update Forecast Weather Problem")
@@ -262,29 +243,26 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     func updateTimeDataFromJson(json : JSON, cityname: String) {
         //let formatedtimemodel = FormatedTimeModel()
         if let formatedtime = json["formatted"].string {
-        print(" formatedtime: \(formatedtime)")
-        // "formatted":"2016-02-02 21:03:11"
-        let formatedlocaltime = localtimeconvertDateFormater(formatedtime)
-        let formateddayanddate = dayandDateconvertDateFormater(formatedtime)
-        
-        let cityExists = cityDataDictionary[cityname] != nil
-        if(!cityExists){
-            let datamodel = WeatherDataModel()
-            cityDataDictionary[cityname] = datamodel
-        }
-        
-        cityDataDictionary[cityname]!.localtime = formatedlocaltime
-        cityDataDictionary[cityname]!.dayAndTime = formateddayanddate
-        print("")
+            print(" formatedtime: \(formatedtime)")
+            // "formatted":"2016-02-02 21:03:11"
+            let formatedlocaltime = localtimeconvertDateFormater(formatedtime)
+            let formateddayanddate = dayandDateconvertDateFormater(formatedtime)
+            
+            let cityExists = cityDataDictionary[cityname] != nil
+            if(!cityExists){
+                let datamodel = WeatherDataModel()
+                cityDataDictionary[cityname] = datamodel
+            }
+            
+            cityDataDictionary[cityname]!.localtime = formatedlocaltime
+            cityDataDictionary[cityname]!.dayAndTime = formateddayanddate
         } else {
             print("update time problem")
         }
         
         cityListTableView.reloadData()
-        //CityTimeModelList.append(formatedtimemodel)
-        
-        
     }
+    
     func localtimeconvertDateFormater(_ date: String) -> String
     {
         let dateFormatter = DateFormatter()
@@ -308,15 +286,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
         
     }
     
-    
-    
-    //MARK: UI update
-    func setLabels(weatherData: NSData) {
-        
-    }
-    
-    
-    
     //MARK: Location manager
     //didUpdateLocations method
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -335,13 +304,10 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
     //didFailWithError method
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print(error)
-        //cityNameLabel.text = "Location Unavailable"
         
     }
     
-    
-    
-    
+ 
     //MARK: Change View
     
     //MARK: Table View Controller
@@ -383,7 +349,6 @@ class CityListViewController: UIViewController, CLLocationManagerDelegate, UITab
                 cityIndexDictionary[i] = cityIndexDictionary[i+1]
             }
             cityIndexDictionary.removeValue(forKey: listNumber)
-            print("This is row \(cityIndexDictionary)")
             cityListTableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
